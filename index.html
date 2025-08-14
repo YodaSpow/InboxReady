@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Currys Email HTML Fixer — body-only, no structure changes</title>
+<link rel="icon" href="https://www.currys.co.uk/on/demandware.static/-/Sites-curryspcworlduk-Library/default/dwac98490e/images/brand-currys-logo.svg">
+
+<style>
+  /* ── Currys brand fonts (with safe fallbacks) ───────────────────────────── */
+  @media screen and (-webkit-min-device-pixel-ratio:0) {
+    @font-face {
+      font-family: 'CurrysSans Headline';
+      src: url('https://currys-ssl.cdn.dixons.com/css/themes/email/Assets/brightWorld/css/curryssansheadline.woff') format('woff');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'CurrysSans Regular';
+      src: url('https://currys-ssl.cdn.dixons.com/css/themes/email/Assets/brightWorld/css/curryssansregular.woff') format('woff');
+      font-display: swap;
+    }
+  }
+
+  :root{
+    --bg:#0f1115; --panel:#161a22; --panel-2:#1c2230;
+    --text:#e9eef5; --muted:#9aa8bd; --good:#38d47a; --warn:#ffbf40; --bad:#ff6b6b;
+    --accent:#7aa7ff; --border:#273043; --chip:#22293a;
+    --mono: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans: "CurrysSans Regular", -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji", sans-serif;
+    --headline: "CurrysSans Headline", -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:24px; background:var(--bg); color:var(--text);
+    font-family:var(--sans);
+  }
+
+  .brandline{
+    display:flex; align-items:center; gap:12px; margin:0 0 16px;
+  }
+  .brandline img.brand{
+    width:auto; height:28px; display:block; filter:drop-shadow(0 0 0 transparent);
+  }
+  .brandline h1{
+    margin:0; font-family:var(--headline); font-size:22px; font-weight:700;
+  }
+  .sub{color:var(--muted); font-family:var(--sans); font-weight:600}
+
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:16px}
+  .row{display:grid; gap:12px}
+  @media(min-width:920px){.row.two{grid-template-columns:1fr 1fr}}
+  label.small{display:block; font-size:13px; color:var(--muted); margin:0 0 6px}
+  input[type="text"]{
+    width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:10px 12px; font-size:14px; outline:none
+  }
+  textarea{
+    width:100%; min-height:360px; resize:vertical; background:#0c0f14; color:#d8e2f1;
+    border:1px solid var(--border); border-radius:8px; padding:12px; font-family:var(--mono); font-size:13px; line-height:1.45;
+    white-space:pre; overflow:auto;
+  }
+  .droper{margin-top:10px; border:1px dashed var(--border); border-radius:10px; padding:14px; text-align:center; color:var(--muted); background:var(--panel-2)}
+  .btnbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px}
+  .btn{background:var(--chip); border:1px solid var(--border); color:#dfe7f5; padding:10px 14px; border-radius:9px; cursor:pointer; font-weight:700}
+  .btn:hover{filter:brightness(1.08)}
+  .gauge{display:inline-flex; gap:8px; align-items:center; margin-left:8px; font-size:13px; color:var(--muted)}
+  .dot{width:10px; height:10px; border-radius:50%}
+  .dot.good{background:var(--good)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+  .metrics{margin-left:auto; display:flex; gap:14px; align-items:center; font-size:13px; color:var(--muted)}
+  .metrics strong{color:var(--text); font-weight:800}
+  .note{font-size:12.5px; color:var(--muted)}
+  .kbd{font-family:var(--mono); background:var(--panel-2); padding:0 6px; border-radius:6px; border:1px solid var(--border); color:#dfe7f5}
+  .changes{margin-top:6px; background:var(--panel-2); border:1px solid var(--border); border-radius:10px; overflow:hidden}
+  .changes summary{
+    list-style:none; cursor:pointer; padding:10px 12px; border-bottom:1px solid var(--border); user-select:none;
+    display:flex; gap:8px; align-items:center; color:#c9d6ea
+  }
+  .changes summary:hover{background:#20273a}
+  .twisty{transition:transform .15s ease}
+  details[open] .twisty{transform:rotate(90deg)}
+  .hl{color:var(--accent); text-decoration:underline; text-underline-offset:3px}
+  .section{padding:10px 12px}
+  .section h4{margin:4px 0 8px; font-size:13px; color:#cfe1ff; font-family:var(--headline)}
+  .changes table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px}
+  .changes thead th{position:sticky; top:0; background:#1e2536; border-bottom:1px solid var(--border); text-align:left; padding:8px}
+  .changes td{border-top:1px solid var(--border); padding:8px; vertical-align:top}
+  .dim{color:var(--muted)}
+  .nowrap{white-space:nowrap}
+  .pill{display:inline-flex; align-items:center; gap:6px; background:#1b2333; border:1px solid var(--border); border-radius:999px; padding:6px 10px}
+  .pill .dot{margin-right:2px}
+  .tips li{margin:3px 0}
+</style>
+</head>
+<body>
+
+  <div class="brandline">
+    <img class="brand" src="https://www.currys.co.uk/on/demandware.static/-/Sites-curryspcworlduk-Library/default/dwac98490e/images/brand-currys-logo.svg" alt="Currys Logo">
+    <h1>Currys Email HTML Fixer — <span class="sub">ties spam words + encodes specials (body only)</span></h1>
+  </div>
+
+  <div class="card">
+    <label class="small" for="words">Spam words (CSV, case-insensitive)</label>
+    <input id="words" type="text" value="Win, Free, Click, Cash, Discount, Price, Bargain" />
+    <div class="note" style="margin-top:8px">
+      These will be tied to the NEXT word with a non-breaking space (<span class="kbd">&amp;nbsp;</span>) <em>in text nodes only</em>.<br/>
+      <strong>Adobe Campaign directives</strong> like <span class="kbd">&lt;% … %&gt;</span> are never touched.<br/>
+      <strong>No structure changes:</strong> we never add <span class="kbd">&lt;tbody&gt;</span> and we never encode inside attribute values
+      (e.g. <span class="kbd">href</span>, <span class="kbd">src</span>). <strong>ALT text GBP rule</strong> (e.g. “£50” → “50GBP”) is the only attribute change.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row two">
+      <div>
+        <label class="small" for="input">Input HTML (paste or drop a file)</label>
+        <textarea id="input" placeholder="Paste your CMS-exported HTML here…"></textarea>
+      </div>
+      <div>
+        <label class="small" for="output">Output HTML (fixed)</label>
+        <textarea id="output" placeholder="Fixed HTML will appear here…" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="droper" id="drop">Drop an .html file here</div>
+
+    <div class="btnbar">
+      <button class="btn" id="run">Run fix</button>
+      <button class="btn" id="copy">Copy output</button>
+      <button class="btn" id="download">Download .html</button>
+
+      <span class="gauge">
+        <span class="pill"><span class="dot good"></span> ≤ 90 KB</span>
+        <span class="pill"><span class="dot warn"></span> ≥ 97 KB</span>
+        <span class="pill"><span class="dot bad"></span> ≥ 100 KB</span>
+      </span>
+
+      <span class="metrics" id="metrics">
+        <span class="pill"><span class="dot good" id="sizeDot"></span><span id="sizeTxt">0.0 KB</span></span>
+        <span>NBSP ties: <strong id="mNbsp">0</strong></span>
+        <span>ALT fixes: <strong id="mAlt">0</strong></span>
+        <span>Special encodings: <strong id="mSpec">0</strong></span>
+        <span>Time: <strong id="mTime">0ms</strong></span>
+      </span>
+    </div>
+
+    <details class="changes" id="changes" style="margin-top:6px">
+      <summary>
+        <span class="twisty">▶</span>
+        <span id="chgTitle" class="hl">Show changes — NBSP ties: 0 • ALT fixes: 0 • Special encodings: 0</span>
+      </summary>
+      <div id="changesContent"></div>
+    </details>
+
+    <div class="note" style="margin-top:10px">
+      <strong>What changes (and nothing else):</strong>
+      <ul class="tips">
+        <li><strong>NBSP ties inside &lt;body&gt; only:</strong> “win prizes” → “win&nbsp;prizes”, etc.</li>
+        <li><strong>Encode specials inside &lt;body&gt; text only:</strong> £ → &amp;pound;, € → &amp;euro;, smart quotes, dashes, bullets, ellipsis. Existing entities are preserved.</li>
+        <li><strong>ALT text rule (body only):</strong> any <em>£N</em> becomes <em>NGBP</em> inside <span class="kbd">&lt;img alt=""&gt;</span>.</li>
+        <li><strong>Adobe Campaign directives:</strong> segments like <span class="kbd">&lt;% … %&gt;</span> are left untouched.</li>
+        <li><strong>No attribute encodes:</strong> we never encode inside <span class="kbd">href</span> or <span class="kbd">src</span>.</li>
+      </ul>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+
+  const input = $('#input');
+  const output = $('#output');
+  const runBtn = $('#run');
+  const copyBtn = $('#copy');
+  const dlBtn = $('#download');
+  const drop = $('#drop');
+  const wordsInput = $('#words');
+
+  const sizeDot = $('#sizeDot'), sizeTxt = $('#sizeTxt');
+  const mNbsp = $('#mNbsp'), mAlt = $('#mAlt'), mSpec = $('#mSpec'), mTime = $('#mTime');
+  const chgTitle = $('#chgTitle'), changesContent = $('#changesContent');
+
+  // Specials to encode in body text nodes
+  const SPECIAL_MAP = new Map(Object.entries({
+    '£':'&pound;', '€':'&euro;',
+    '—':'&mdash;', '–':'&ndash;', '…':'&hellip;',
+    '©':'&copy;', '®':'&reg;', '™':'&trade;',
+    '“':'&ldquo;', '”':'&rdquo;', '‘':'&lsquo;', '’':'&rsquo;',
+    '«':'&laquo;', '»':'&raquo;', '‹':'&lsaquo;', '›':'&rsaquo;',
+    '×':'&times;', '±':'&plusmn;', '°':'&deg;'
+  }));
+
+  function wordsToRegex(csv){
+    const words = csv.split(',').map(s => s.trim()).filter(Boolean);
+    if(!words.length) return null;
+    const esc = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+    return new RegExp(`\\b(?:${esc.join('|')})\\b\\s+(?=\\S)`, 'gi');
+  }
+
+  function makeLineIndex(str){
+    const idx=[0];
+    for(let i=0;i<str.length;i++){ if(str[i]==='\n') idx.push(i+1); }
+    return {
+      toLineCol(pos){
+        let lo=0, hi=idx.length-1;
+        while(lo<=hi){
+          const mid=(lo+hi)>>1;
+          if(idx[mid]<=pos){
+            if(mid===idx.length-1 || idx[mid+1]>pos){ lo=mid; break; }
+            else lo=mid+1;
+          }else hi=mid-1;
+        }
+        return {line: lo+1, col: pos-idx[lo]+1};
+      }
+    };
+  }
+
+  // Main fixer (body-only)
+  function fixHtml(html, wordsCsv){
+    const t0 = performance.now();
+    const lineIndex = makeLineIndex(html);
+
+    const open = /<body\b[^>]*>/i.exec(html);
+    const close = /<\/body>/i.exec(html);
+    let start=0, end=html.length;
+    if(open && close){ start=open.index+open[0].length; end=close.index; }
+
+    const before = html.slice(0,start);
+    const body = html.slice(start,end);
+    const after = html.slice(end);
+
+    // Protect Adobe Campaign directives: <% ... %>
+    const protectedChunks = [];
+    const bodyProtected = body.replace(/<%[\s\S]*?%>/g, m=>{
+      const token = `__ACD_${protectedChunks.length}__`;
+      protectedChunks.push(m); return token;
+    });
+
+    const TAG_RE = /(<[^>]+>)/g;
+
+    // Counters + logs
+    let countNbsp=0, countAlt=0, countSpec=0;
+    const nbspChanges=[], altChanges=[], specChanges=[];
+    function addChange(arr, pos, beforeStr, afterStr, contextStr){
+      const {line, col} = lineIndex.toLineCol(pos);
+      arr.push({line, col, before:beforeStr, after:afterStr, context:contextStr});
+    }
+
+    // Encode specials in text nodes (collect each change)
+    function encodeText(seg, segOffsetGlobal){
+      let out=''; 
+      for(let i=0;i<seg.length;i++){
+        const ch = seg[i], mapped = SPECIAL_MAP.get(ch);
+        if(mapped){
+          const ctx = seg.slice(Math.max(0,i-30), Math.min(seg.length,i+30)).replace(/\n/g,'⏎');
+          addChange(specChanges, segOffsetGlobal+i, ch, mapped, ctx);
+          countSpec++;
+          out += mapped;
+        }else out += ch;
+      }
+      return out;
+    }
+
+    // NBSP tie: word + next token
+    function tieNbsp(text, segGlobalOffset){
+      const re = wordsToRegex(wordsCsv);
+      if(!re) return text;
+      return text.replace(re, (match, offset, whole)=>{
+        const beforeStr = match;
+        const afterStr  = match.replace(/\s+$/,'') + '&nbsp;';
+        const pos = segGlobalOffset + offset;
+        const ctx = whole.slice(Math.max(0,offset-30), Math.min(whole.length, offset+match.length+30)).replace(/\n/g,'⏎');
+        addChange(nbspChanges, pos, beforeStr, afterStr, ctx);
+        countNbsp++;
+        return afterStr;
+      });
+    }
+
+    // ALT rule in <img ... alt="£N"> — record each £N change
+    function fixAlt(tag, tagGlobalStart){
+      if(!/\bimg\b/i.test(tag) || !/\balt\s*=/.test(tag)) return tag;
+      const m = /\balt\s*=\s*("([^"]*)"|'([^']*)')/i.exec(tag);
+      if(!m) return tag;
+
+      const attrIdx = m.index;
+      const quoteChar = m[1][0];
+      const val = m[2] ?? m[3] ?? '';
+      let changedVal = val;
+      const poundRE = /£\s*([0-9][0-9.,]*)/g;
+      let mm;
+      while((mm = poundRE.exec(val)) !== null){
+        const full = mm[0], num = mm[1];
+        const valueOffset = attrIdx + m[0].indexOf(val) + mm.index;
+        const ctx = val.slice(Math.max(0,mm.index-30), Math.min(val.length, mm.index+full.length+30)).replace(/\n/g,'⏎');
+        addChange(altChanges, tagGlobalStart + valueOffset, full, `${num}GBP`, ctx);
+        countAlt++;
+      }
+      changedVal = val.replace(poundRE, (_,num)=>`${num}GBP`);
+      if(changedVal===val) return tag;
+      return tag.slice(0, m.index) + `alt=${quoteChar}${changedVal}${quoteChar}` + tag.slice(m.index + m[0].length);
+    }
+
+    let out='', lastIdx=0, mTag;
+    while((mTag = TAG_RE.exec(bodyProtected)) !== null){
+      const tag = mTag[1];
+      const textSeg = bodyProtected.slice(lastIdx, mTag.index);
+      if(textSeg){
+        const parts = textSeg.split(/(__ACD_\d+__)/g);
+        for(let p=0, off=0; p<parts.length; p++){
+          const piece = parts[p];
+          if(/^__ACD_\d+__$/.test(piece)){ out += piece; off += piece.length; }
+          else if(piece){
+            const globalOffset = start + lastIdx + off;
+            const encoded = encodeText(piece, globalOffset);
+            const glued = tieNbsp(encoded, globalOffset);
+            out += glued;
+            off += piece.length;
+          }
+        }
+      }
+      // Do NOT encode inside attributes; only apply ALT rule
+      out += fixAlt(tag, start + mTag.index);
+      lastIdx = TAG_RE.lastIndex;
+    }
+    const tail = bodyProtected.slice(lastIdx);
+    if(tail){
+      const parts = tail.split(/(__ACD_\d+__)/g);
+      for(let p=0, off=0; p<parts.length; p++){
+        const piece = parts[p];
+        if(/^__ACD_\d+__$/.test(piece)){ out += piece; off += piece.length; }
+        else if(piece){
+          const globalOffset = start + lastIdx + off;
+          const encoded = encodeText(piece, globalOffset);
+          const glued = tieNbsp(encoded, globalOffset);
+          out += glued;
+          off += piece.length;
+        }
+      }
+    }
+
+    // Restore Adobe Campaign chunks
+    out = out.replace(/__ACD_(\d+)__/g, (_,i)=>protectedChunks[+i]);
+
+    const fixed = before + out + after;
+    const t1 = performance.now();
+
+    return {
+      html: fixed,
+      counts: { nbsp: countNbsp, alt: countAlt, spec: countSpec, ms: Math.round((t1-t0)*10)/10 },
+      logs: { nbspChanges, altChanges, specChanges }
+    };
+  }
+
+  function bytesOf(str){ return new TextEncoder().encode(str).length; }
+
+  function updateGauges(html, counts){
+    const kb = Math.round(bytesOf(html)/102.4)/10;
+    sizeTxt.textContent = kb.toFixed(1) + ' KB';
+    let c='good'; if(kb>=100) c='bad'; else if(kb>=97) c='warn';
+    sizeDot.className = 'dot ' + c;
+    mNbsp.textContent = counts.nbsp;
+    mAlt.textContent  = counts.alt;
+    mSpec.textContent = counts.spec;
+    mTime.textContent = counts.ms + 'ms';
+    chgTitle.textContent = `Show changes — NBSP ties: ${counts.nbsp} • ALT fixes: ${counts.alt} • Special encodings: ${counts.spec}`;
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+  }
+
+  function buildTable(rows){
+    const wrap = document.createElement('div');
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr><th class="nowrap">Line:Col</th><th>Before → After</th><th>Context</th></tr>
+      </thead>
+      <tbody></tbody>`;
+    const tb = table.querySelector('tbody');
+    for(const r of rows){
+      const tr = document.createElement('tr');
+      const td1 = document.createElement('td'); td1.className='nowrap dim'; td1.textContent=`${r.line}:${r.col}`;
+      const td2 = document.createElement('td'); td2.innerHTML = `<span class="dim">${escapeHtml(r.before)}</span> → <span>${escapeHtml(r.after)}</span>`;
+      const td3 = document.createElement('td'); td3.textContent = r.context;
+      tr.append(td1,td2,td3);
+      tb.appendChild(tr);
+    }
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  function renderChanges(logs){
+    changesContent.innerHTML = '';
+    const {nbspChanges, altChanges, specChanges} = logs;
+
+    function addSection(title, rows){
+      if(!rows.length) return;
+      const sec = document.createElement('div');
+      sec.className = 'section';
+      const h4 = document.createElement('h4'); h4.textContent = title;
+      sec.appendChild(h4);
+      sec.appendChild(buildTable(rows));
+      changesContent.appendChild(sec);
+    }
+
+    addSection(`NBSP ties (${nbspChanges.length})`, nbspChanges);
+    addSection(`ALT fixes (${altChanges.length})`, altChanges);
+    addSection(`Special character encodings (${specChanges.length})`, specChanges);
+  }
+
+  // Actions
+  $('#run').addEventListener('click', ()=>{
+    const {html, counts, logs} = fixHtml(input.value, wordsInput.value);
+    output.value = html;
+    updateGauges(html, counts);
+    renderChanges(logs);
+  });
+
+  $('#copy').addEventListener('click', async ()=>{
+    if(!output.value) return;
+    await navigator.clipboard.writeText(output.value);
+    const btn = $('#copy'); btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy output',1000);
+  });
+
+  $('#download').addEventListener('click', ()=>{
+    if(!output.value) return;
+    const blob = new Blob([output.value], {type:'text/html;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fixed.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // Drag & drop
+  ;['dragenter','dragover','dragleave','drop'].forEach(ev=>{
+    drop.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); }, false);
+  });
+  drop.addEventListener('dragover', ()=> drop.style.background='#1a2132');
+  drop.addEventListener('dragleave', ()=> drop.style.background='var(--panel-2)');
+  drop.addEventListener('drop', e=>{
+    drop.style.background='var(--panel-2)';
+    const file = e.dataTransfer.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { input.value = String(ev.target.result || ''); };
+    reader.readAsText(file);
+  });
+
+})();
+</script>
+</body>
+</html>

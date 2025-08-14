@@ -2,8 +2,6 @@
 
 *A tiny, client-side tool that polishes CMS-exported email HTML so it’s safe for inboxes—without changing your layout.*
 
-**Live:** _(add your GitHub Pages URL once the repo is published)_
-
 ---
 
 ## Why InboxReady?

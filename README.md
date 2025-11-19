@@ -23,8 +23,8 @@ CRM managers can now self-serve the final “post-CMS” tidy-up that email deve
 - **Special character encodes (body text nodes only):**
   - e.g. `£` → `&pound;`, `€` → `&euro;`, smart quotes → HTML entities, em/en dashes, ellipses, bullets, etc.
   - Existing entities are preserved (no double-encoding).
-- **ALT text GBP rule (body only):**
-  - Any `£N` in an `<img alt="…">` becomes `NGBP` (e.g., `alt="£129.99"` → `alt="129.99GBP"`).
+- **ALT text GBP/EUR rule (body only):**
+  - Any `£N` becomes `NGBP` and any `€N` becomes `NEUR` inside `<img alt="…">` (e.g., `alt="£129.99"` → `alt="129.99GBP"`, `alt="€30"` → `alt="30EUR"`).
 - **File size meter:**
   - ≤ **90 KB** (green), ≥ **97 KB** (amber), ≥ **100 KB** (red). Quick sanity check for provider limits.
 - **Change report:**

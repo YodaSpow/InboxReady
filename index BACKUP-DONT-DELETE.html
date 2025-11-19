@@ -25,31 +25,12 @@
     --bg:#0f1115; --panel:#161a22; --panel-2:#1c2230;
     --text:#e9eef5; --muted:#9aa8bd; --good:#38d47a; --warn:#ffbf40; --bad:#ff6b6b;
     --accent:#7aa7ff; --border:#273043; --chip:#22293a;
-    --scroll-track:#0b0e15; --scroll-thumb:#2a3347; --scroll-thumb-hover:#38435b;
     --mono: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
     --sans: "CurrysSans Regular", -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji", sans-serif;
     --headline: "CurrysSans Headline", -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   }
 
-  *{
-    box-sizing:border-box;
-    scrollbar-color:var(--scroll-thumb) var(--scroll-track);
-    scrollbar-width:thin;
-  }
-  *::-webkit-scrollbar{
-    width:10px; height:10px;
-  }
-  *::-webkit-scrollbar-track{
-    background:var(--scroll-track);
-  }
-  *::-webkit-scrollbar-thumb{
-    background:var(--scroll-thumb);
-    border-radius:10px;
-    border:2px solid var(--scroll-track);
-  }
-  *::-webkit-scrollbar-thumb:hover{
-    background:var(--scroll-thumb-hover);
-  }
+  *{box-sizing:border-box}
   body{
     margin:0; padding:24px; background:var(--bg); color:var(--text);
     font-family:var(--sans);
@@ -125,7 +106,7 @@
       These will be tied to the NEXT word with a non-breaking space (<span class="kbd">&amp;nbsp;</span>) <em>in text nodes only</em>.<br/>
       <strong>Adobe Campaign directives</strong> like <span class="kbd">&lt;% … %&gt;</span> are never touched.<br/>
       <strong>No structure changes:</strong> we never add <span class="kbd">&lt;tbody&gt;</span> and we never encode inside attribute values
-      (e.g. <span class="kbd">href</span>, <span class="kbd">src</span>). <strong>ALT text GBP/EUR rule</strong> (e.g. “£50” → “50GBP”, “€30” → “30EUR”) is the only attribute change.
+      (e.g. <span class="kbd">href</span>, <span class="kbd">src</span>). <strong>ALT text GBP rule</strong> (e.g. “£50” → “50GBP”) is the only attribute change.
     </div>
   </div>
 
@@ -176,7 +157,7 @@
       <ul class="tips">
         <li><strong>NBSP ties inside &lt;body&gt; only:</strong> “win prizes” → “win&nbsp;prizes”, etc.</li>
         <li><strong>Encode specials inside &lt;body&gt; text only:</strong> £ → &amp;pound;, € → &amp;euro;, smart quotes, dashes, bullets, ellipsis. Existing entities are preserved.</li>
-        <li><strong>ALT text rule (body only):</strong> any <em>£N</em> becomes <em>NGBP</em> and any <em>€N</em> becomes <em>NEUR</em> inside <span class="kbd">&lt;img alt=""&gt;</span> — everywhere else the symbols stay encoded as &amp;pound; / &amp;euro;.</li>
+        <li><strong>ALT text rule (body only):</strong> any <em>£N</em> becomes <em>NGBP</em> inside <span class="kbd">&lt;img alt=""&gt;</span>.</li>
         <li><strong>Adobe Campaign directives:</strong> segments like <span class="kbd">&lt;% … %&gt;</span> are left untouched.</li>
         <li><strong>No attribute encodes:</strong> we never encode inside <span class="kbd">href</span> or <span class="kbd">src</span>.</li>
       </ul>
@@ -208,11 +189,6 @@
     '«':'&laquo;', '»':'&raquo;', '‹':'&lsaquo;', '›':'&rsaquo;',
     '×':'&times;', '±':'&plusmn;', '°':'&deg;'
   }));
-  const ALT_CURRENCY_CODES = new Map([
-    ['£','GBP'],
-    ['€','EUR']
-  ]);
-  const ALT_CURRENCY_RE_SOURCE = '([£€])\\s*([0-9][0-9.,]*)';
 
   function wordsToRegex(csv){
     const words = csv.split(',').map(s => s.trim()).filter(Boolean);
@@ -237,29 +213,6 @@
         return {line: lo+1, col: pos-idx[lo]+1};
       }
     };
-  }
-
-  // Build GMT-stamped filename like fixed_19-11-25_3.17PM.html; fall back to fixed.html on failure
-  function buildDownloadName(){
-    try{
-      const parts = new Intl.DateTimeFormat('en-GB',{
-        timeZone:'Europe/London',
-        day:'2-digit', month:'2-digit', year:'2-digit',
-        hour:'numeric', minute:'2-digit',
-        hour12:true
-      }).formatToParts(new Date());
-      const get = type => parts.find(p => p.type === type)?.value;
-      const day = get('day'), month = get('month'), year = get('year');
-      const hourRaw = get('hour'), minuteRaw = get('minute');
-      const period = get('dayPeriod');
-      if(!day || !month || !year || !hourRaw || !minuteRaw || !period) throw new Error('Missing date parts');
-      const hour = String(parseInt(hourRaw,10));
-      const minute = minuteRaw.padStart(2,'0');
-      const periodUpper = period.replace(/\s+/g,'').toUpperCase();
-      return `fixed_${day}-${month}-${year}_${hour}.${minute}${periodUpper}.html`;
-    }catch(err){
-      return 'fixed.html';
-    }
   }
 
   // Main fixer (body-only)
@@ -323,7 +276,7 @@
       });
     }
 
-  // ALT rule in <img ... alt="currency N"> — record GBP/EUR conversions only inside ALT text
+    // ALT rule in <img ... alt="£N"> — record each £N change
     function fixAlt(tag, tagGlobalStart){
       if(!/\bimg\b/i.test(tag) || !/\balt\s*=/.test(tag)) return tag;
       const m = /\balt\s*=\s*("([^"]*)"|'([^']*)')/i.exec(tag);
@@ -332,19 +285,18 @@
       const attrIdx = m.index;
       const quoteChar = m[1][0];
       const val = m[2] ?? m[3] ?? '';
-      const valStartOffset = attrIdx + m[0].indexOf(val);
-      let didChange = false;
-      const re = new RegExp(ALT_CURRENCY_RE_SOURCE, 'g');
-      const changedVal = val.replace(re, (match, symbol, num, offset)=>{
-        const code = ALT_CURRENCY_CODES.get(symbol);
-        if(!code) return match;
-        const ctx = val.slice(Math.max(0,offset-30), Math.min(val.length, offset+match.length+30)).replace(/\n/g,'⏎');
-        addChange(altChanges, tagGlobalStart + valStartOffset + offset, match, `${num}${code}`, ctx);
+      let changedVal = val;
+      const poundRE = /£\s*([0-9][0-9.,]*)/g;
+      let mm;
+      while((mm = poundRE.exec(val)) !== null){
+        const full = mm[0], num = mm[1];
+        const valueOffset = attrIdx + m[0].indexOf(val) + mm.index;
+        const ctx = val.slice(Math.max(0,mm.index-30), Math.min(val.length, mm.index+full.length+30)).replace(/\n/g,'⏎');
+        addChange(altChanges, tagGlobalStart + valueOffset, full, `${num}GBP`, ctx);
         countAlt++;
-        didChange = true;
-        return `${num}${code}`;
-      });
-      if(!didChange) return tag;
+      }
+      changedVal = val.replace(poundRE, (_,num)=>`${num}GBP`);
+      if(changedVal===val) return tag;
       return tag.slice(0, m.index) + `alt=${quoteChar}${changedVal}${quoteChar}` + tag.slice(m.index + m[0].length);
     }
 
@@ -476,7 +428,7 @@
     const blob = new Blob([output.value], {type:'text/html;charset=utf-8'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = buildDownloadName();
+    a.download = 'fixed.html';
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(a.href);
   });
